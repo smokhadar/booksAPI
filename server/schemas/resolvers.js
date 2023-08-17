@@ -21,9 +21,9 @@ const resolvers = {
     },
 
     Mutation: {
-        createUser: async (parent, args, res) => {
+        createUser: async (parent, body, res) => {
             try {
-                const user = await User.create(args);
+                const user = await User.create(body);
 
                 if (!user) {
                     return res.status(400).json({
@@ -37,12 +37,34 @@ const resolvers = {
                 return res.status(500).json(err);
             }
         },
-        saveBook: async (parent, args, res) => {
-            console.log(args);
+        // is login query or mutation?
+        login: async (parent, body, res) => {
+            try {
+                const user = await User.findOne(
+                    { $or: [{username: body.username }, { email: body.email }] });
+                
+                if (!user) {
+                    return res.status(400).json({ message: "Can't find this user!"});
+                }
+
+                const correctPw = await user.isCorrectPassword(body.password);
+
+                if (!correctPassword) {
+                    return res.status(400).json({ message: 'wrong apssword!' });
+                }
+
+                const token = signToken(user);
+                res.json({ token, user });
+            } catch (err) {
+                return res.status(500).json(err);
+            }
+        },
+        saveBook: async (parent, {_id, book}, res) => {
+            console.log(body);
             try {
                 const updatedUser = await User.findOneAndUpdate(
-                    { _id: args._id },
-                    { $addToSet: {savedBooks: args.book } },
+                    { _id: _id },
+                    { $addToSet: {savedBooks: book } },
                     { runValidators: true, new: true }
                 )
     
@@ -51,16 +73,16 @@ const resolvers = {
                 };
     
                 return res.json(updatedUser);
-            } catch(err) {
+            } catch (err) {
                 console.log(err);
                 return res.status(500).json(err);
             }
        },
-       deleteBook: async (parent, args, res) => {
+       deleteBook: async (parent, { _id, book}, res) => {
         try {
             const updatedUser = await User.findOneAndUpdate(
-                { _id: args.user._id },
-                { $pull: {savedBooks: {bookId: args.bookId } } },
+                { _id: _id },
+                { $pull: {savedBooks: {bookId: book} } },
                 { new: true }
             );
             if (!updatedUser) {
