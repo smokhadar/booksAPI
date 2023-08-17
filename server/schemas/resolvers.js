@@ -89,10 +89,12 @@ const resolvers = {
                 return res.status(404).json({ message: 'Couldnt find user with this ID! '});
             }
             return res.json(updatedUser);
-        } catch (err) {
-            console.log(err);
-            return res.status(500).json(err);
-        }
+            } catch (err) {
+                console.log(err);
+                return res.status(500).json(err);
+            }
        },
     }
 }
+
+module.exports = resolvers;
